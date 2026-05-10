@@ -1,27 +1,20 @@
 <?php
-// ============================================================
-//  config.php — Konfigurasi Database (Railway MySQL)
-// ============================================================
-
-// Railway otomatis inject variabel environment ini
-// Kalau deploy di Railway, tidak perlu ubah apapun di sini.
-// Kalau mau test lokal, ganti nilainya sesuai kredensial lokal.
-
 define('DB_HOST', getenv('MYSQLHOST')     ?: 'viaduct.proxy.rlwy.net');
 define('DB_PORT', getenv('MYSQLPORT')     ?: '29303');
 define('DB_USER', getenv('MYSQLUSER')     ?: 'root');
-define('DB_PASS', getenv('MYSQLPASSWORD') ?: 'veValoYwdELomekFqtTEDpNzDVbWbQHh');          // isi password Railway kamu di sini untuk test lokal
+define('DB_PASS', getenv('MYSQLPASSWORD') ?: 'veValoYwdELomekFqtTEDpNzDVbWbQHh');
 define('DB_NAME', getenv('MYSQLDATABASE') ?: 'railway');
 
-function getDB(): mysqli {
-    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, (int) DB_PORT);
-    if ($conn->connect_error) {
+function getDB(): PDO {
+    $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', DB_HOST, DB_PORT, DB_NAME);
+    try {
+        return new PDO($dsn, DB_USER, DB_PASS, [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+        ]);
+    } catch (PDOException $e) {
         http_response_code(500);
-        die(json_encode([
-            'success' => false,
-            'message' => 'Koneksi database gagal: ' . $conn->connect_error
-        ]));
+        die(json_encode(['success' => false, 'message' => 'Koneksi gagal: ' . $e->getMessage()]));
     }
-    $conn->set_charset('utf8mb4');
-    return $conn;
 }
